@@ -1,16 +1,22 @@
-<!doctype html>
-<html lang="">    
+<!DOCTYPE html>
+<html>    
 <head>
+    <title>Udacity Neighborhood Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
     <meta charset="utf-8">
-    <title>Udacity Neighborhood Map</title>    
+    <link rel="stylesheet" href="styles/main.css">
 </head>
 <body>
-    <!-- This is a *view* - HTML markup that defines the appearance of your UI -->
-    <p>First name: <strong data-bind="text: firstName"></strong></p>
-    <p>Last name: <strong data-bind="text: lastName"></strong></p>
-
+    <div id="map">
+        <!-- This is a *view* - HTML markup that defines the appearance of your UI -->
+        <p>First name: <strong data-bind="text: firstName"></strong></p>
+        <p>Last name: <strong data-bind="text: lastName"></strong></p>
+    </div>
     <script src="../node_modules/knockout/build/output/knockout-latest.js"></script>
     <script src="scripts/app.js"></script>
+
+    <script async defer
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyClPOAOynlgDWP5GvaZiFfqL3XS88vI4Oo&v=3&callback=initMap"></script>
 </body>
 </html>
     
