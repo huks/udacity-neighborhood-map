@@ -2,30 +2,34 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>Udacity Neighborhood Map</title>
+  <!-- Required meta tags -->
   <meta charset="utf-8">
-  <title>Page Title</title>
-
-  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4/jquery.min.js" type="text/javascript">
-  </script>
-  <script src='http://ajax.microsoft.com/ajax/jquery.templates/beta1/jquery.tmpl.min.js'>
-  </script>
-  <script src="http://cdnjs.cloudflare.com/ajax/libs/knockout/1.2.1/knockout-min.js">
-  </script>
-
-  <script src="scripts/app.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="components/bootstrap/dist/css/bootstrap.min.css">
+  <!-- main.css -->
+  <link rel="stylesheet" href="styles/main.css">  
 </head>
 <body>
-  <input placeholder="Search…" type="search" data-bind="value: query, valueUpdate: 'keyup'" autocomplete="off">
-  
-  <div class="content">
-    <ul data-bind="template: {name:'loc', foreach:locations}">
-    </ul>
+  <div class="container-fluid">
+    <div class="row">
+        <!-- list-bar -->
+        <div class="col-sm-3">
+            <input id="filter" type="text" data-bind="textInput: filter"/>
+
+            <ul data-bind="foreach: filteredLocations">
+              <li data-bind="text: title"></li>
+            </ul>
+        </div>
+        <!-- map -->
+        <div id="map" class="col-sm-9"></div>
+      </div>
   </div>
 
-  <script data-proofer-ignore type="text/html" id="loc">
-    <li>
-      <strong data-bind="text: title"></strong>
-    </li>
-  </script>
+  <script src="components\jquery\dist\jquery.min.js"></script>
+  <script src="components\knockout\dist\knockout.js"></script>
+
+  <script src="scripts/app.js"></script>
 </body>
 </html>
