@@ -16,7 +16,7 @@
     <div class="row">
         <!-- list-bar -->
         <div class="col-sm-3">
-            <input id="filter" type="text" data-bind="textInput: filter"/>
+            <input id="filter" type="text" data-bind="textInput: filter" onkeydown="filterMap()"/>
 
             <ul data-bind="foreach: filteredLocations">
               <li data-bind="text: title"></li>
@@ -27,9 +27,13 @@
       </div>
   </div>
 
+  <!-- components -->
   <script src="components\jquery\dist\jquery.min.js"></script>
   <script src="components\knockout\dist\knockout.js"></script>
-
+  <!-- app.js -->
   <script src="scripts/app.js"></script>
+  <!-- Google Maps JavaScript -->
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyClPOAOynlgDWP5GvaZiFfqL3XS88vI4Oo&v=3&callback=initMap"></script>
 </body>
 </html>
