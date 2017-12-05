@@ -15,12 +15,14 @@
   <div class="container-fluid">
     <div class="row">
         <!-- list-bar -->
-        <div class="col-sm-3">
-            <input id="filter" type="text" data-bind="textInput: filter"/>
-
-            <ul data-bind="foreach: filteredLocations">
-              <li data-bind="text: title"></li>
-            </ul>
+        <div id="list-bar" class="col-sm-3">
+            <div class="form-group">
+              <label for="filter">Search:</label>
+              <input id="filter" type="text" data-bind="textInput: filter" class="form-control"/>
+            </div>
+            <div data-bind="foreach: filteredLocations" class="list-group">
+              <a href="#" data-bind="text: title, click: $root.animateMarker" class="list-group-item"></a>
+            </div>
         </div>
         <!-- map -->
         <div id="map" class="col-sm-9"></div>
