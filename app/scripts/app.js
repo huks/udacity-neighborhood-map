@@ -19,20 +19,20 @@ var DEFAULT_LOCATIONS = [
 function Location(data) {
     var self = this;
     this.title = ko.observable(data.title);
-    self.location = ko.observable(data.location);
+    this.location = ko.observable(data.location);
 
     // Marker feature cited from...
 
     // Create a marker for each location
     this.marker = new google.maps.Marker({
-        position: self.location(),
+        position: this.location(),
         title: this.title(),
         animation: google.maps.Animation.DROP
     });
 
     // Create an onclick event per marker
     this.marker.addListener('click', function() {
-        populateInfoWindow(self.marker, INFO_WINDOW);
+        populateInfoWindow(self, INFO_WINDOW);
     });
 
     // Extend the boundaries of the map for each marker
@@ -80,7 +80,7 @@ function AppViewModel() {
     }, this);
 
     this.clickMarker = function(location) {
-        populateInfoWindow(location.marker, INFO_WINDOW);
+        populateInfoWindow(location, INFO_WINDOW);
     }
 
     // Fit map to initialized bounds
@@ -91,9 +91,81 @@ function AppViewModel() {
 // We'll only allow one InfoWindow which will open at the marker that is clicked,
 // and populate based on that markers position.
 // Cited from Udacity course: Project_Code_13_DevilInTheDetailsPlacesDetails.html
-function populateInfoWindow(marker, infoWindow) {
+function populateInfoWindow(location, infoWindow) {
+    // marker variable is...
+    var marker = location.marker;
+
     // Animate to the marker
     MAP.panTo(marker.position);
+
+    var latLng = location.location().lat+','+location.location().lng;
+    console.log(latLng);
+
+    // AJAX
+    $.ajax({
+        url: 'https://api.foursquare.com/v2/venues/search',
+        dataType: 'json',
+        data: {
+            'client_id': 'SR3U4RKZ5LPPQBWVYVOVJFA54XIR3HHH0L5XV3P45EC2LZCA',
+            'client_secret': 'UQM4AU1YV4YQB4ADXD4TQZPUNIFQRSI4OKXEACRYL3GR0XRI',            
+            'll': latLng,
+            'v': 20171206,
+            'limit': 1
+        }
+    })
+    .done(handleResponse)
+    .fail(function() {
+        // error
+    })
+    .always(function() {
+        // complete
+    });
+
+    function handleResponse(data) {
+        console.log('the ajax request has finished!');
+        console.log('id:', data.response.venues[0].id);
+        console.log('name:', data.response.venues[0].name);
+
+        var venueID = data.response.venues[0].id;
+
+        // AJAX
+        $.ajax({
+            url: 'https://api.foursquare.com/v2/venues/'+venueID+'/photos',
+            dataType: 'json',
+            data: {
+                'client_id': 'SR3U4RKZ5LPPQBWVYVOVJFA54XIR3HHH0L5XV3P45EC2LZCA',
+                'client_secret': 'UQM4AU1YV4YQB4ADXD4TQZPUNIFQRSI4OKXEACRYL3GR0XRI',
+                'v': 20171206,
+                'limit': 1
+            }
+        })
+        .done(function(result) {
+            var photoCount = result.response.photos.count;
+            if (photoCount > 0) {
+                var prefix = result.response.photos.items[0].prefix;
+                var size = 'height200';
+                var suffix = result.response.photos.items[0].suffix;
+                var photoURL = prefix + size + suffix;
+
+                infoWindow.setContent(`
+                    <div>${marker.title}</div>
+                    <div>
+                        <img src=${photoURL}>
+                    </div>
+                `);
+            } else {
+                infoWindow.setContent(`
+                    <div>${marker.title}</div>
+                `);
+            }   
+        })
+        .fail(function() {
+            // error
+        })
+        .always(function() {
+            // complete
+        });
+    }
 
     // Check to make sure the InfoWindow is not already opened on this marker.
     if (infoWindow.marker != marker) {
@@ -133,7 +205,7 @@ function populateInfoWindow(marker, infoWindow) {
         }
         // Use streetview service to get the closest streetview image within
         // 50 meters of the markers position
-        streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
+        // streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
         // Open the InfoWindow on the correct marker.
         infoWindow.open(MAP, marker);    
     }
