@@ -1,6 +1,10 @@
 // Global map variables
 var MAP;
 var INFO_WINDOW;
+// Constant variables
+const FOURSQUARE_CLIENT_ID = 'SR3U4RKZ5LPPQBWVYVOVJFA54XIR3HHH0L5XV3P45EC2LZCA';
+const FOURSQUARE_CLIENT_SECRET = 'UQM4AU1YV4YQB4ADXD4TQZPUNIFQRSI4OKXEACRYL3GR0XRI';
+const FOURSQUARE_VERSION = '20171206';
 
 // The default location listings data - would come from the server
 var DEFAULT_LOCATIONS = [
@@ -92,54 +96,78 @@ function AppViewModel() {
 // and populate based on that markers position.
 // Cited from Udacity course: Project_Code_13_DevilInTheDetailsPlacesDetails.html
 function populateInfoWindow(location, infoWindow) {
-    // marker variable is...
     var marker = location.marker;
+    var latLng = location.location().lat+','+location.location().lng;
 
     // Animate to the marker
     MAP.panTo(marker.position);
 
-    var latLng = location.location().lat+','+location.location().lng;
-    console.log(latLng);
+    if (infoWindow.marker != marker) {
+        // Clear the InfoWindow content to give the streetview time to load.
+        // infoWindow.setContent('');
+        infoWindow.marker = marker;
+        // Make sure the marker property is cleared if the InfoWindow is closed.
+        infoWindow.addListener('closeclick', function() {
+            infoWindow.marker = null;
+        });
 
-    // AJAX
-    $.ajax({
-        url: 'https://api.foursquare.com/v2/venues/search',
-        dataType: 'json',
-        data: {
-            'client_id': 'SR3U4RKZ5LPPQBWVYVOVJFA54XIR3HHH0L5XV3P45EC2LZCA',
-            'client_secret': 'UQM4AU1YV4YQB4ADXD4TQZPUNIFQRSI4OKXEACRYL3GR0XRI',            
-            'll': latLng,
-            'v': 20171206,
-            'limit': 1
-        }
-    })
-    .done(handleResponse)
-    .fail(function() {
-        // error
-    })
-    .always(function() {
-        // complete
-    });
+        searchForVenue(latLng);
+    }
 
-    function handleResponse(data) {
-        console.log('the ajax request has finished!');
-        console.log('id:', data.response.venues[0].id);
-        console.log('name:', data.response.venues[0].name);
-
-        var venueID = data.response.venues[0].id;
-
-        // AJAX
-        $.ajax({
-            url: 'https://api.foursquare.com/v2/venues/'+venueID+'/photos',
+    /**
+     * Search for Venue(s)
+     * Foursquare API: Returns a list of venues near the current location,
+     * optinally matching a search term.
+     */   
+    function searchForVenue(latLng) {
+        var ll = latLng;
+        return $.ajax({
+            url: 'https://api.foursquare.com/v2/venues/search',
             dataType: 'json',
             data: {
-                'client_id': 'SR3U4RKZ5LPPQBWVYVOVJFA54XIR3HHH0L5XV3P45EC2LZCA',
-                'client_secret': 'UQM4AU1YV4YQB4ADXD4TQZPUNIFQRSI4OKXEACRYL3GR0XRI',
-                'v': 20171206,
+                'client_id': FOURSQUARE_CLIENT_ID,
+                'client_secret': FOURSQUARE_CLIENT_SECRET,            
+                'll': ll,
+                'v': FOURSQUARE_VERSION,
+                'limit': 1
+            }
+        })
+        .then(getVenuePhoto)
+        .done(function() {
+            console.log('venue success');
+            // When both searchForVenue and getVenuePhoto are done          
+            infoWindow.open(MAP, marker);  
+        })
+        .fail(function() {
+            console.log('venue error');
+            // No InfoWindow shown
+        })
+        .always(function() {
+            console.log('venue complete');
+            // it should be called at 'last'           
+        });
+    }
+
+    /**
+     * Get a Venue's Photo(s)
+     * Foursquare API: Returns a photos for a specific venue.
+     * Dependence chain of searchForVenue Ajax request
+     */
+    function getVenuePhoto(data) {
+        var venueId = data.response.venues[0].id;
+        var venueName = data.response.venues[0].name;
+        return $.ajax({
+            url: 'https://api.foursquare.com/v2/venues/'+venueId+'/photos',
+            dataType: 'json',
+            data: {
+                'client_id': FOURSQUARE_CLIENT_ID,
+                'client_secret': FOURSQUARE_CLIENT_SECRET,
+                'v': FOURSQUARE_VERSION,
                 'limit': 1
             }
         })
         .done(function(result) {
+            console.log('photo success');
             var photoCount = result.response.photos.count;
             if (photoCount > 0) {
                 var prefix = result.response.photos.items[0].prefix;
@@ -147,67 +175,27 @@ function populateInfoWindow(location, infoWindow) {
                 var suffix = result.response.photos.items[0].suffix;
                 var photoURL = prefix + size + suffix;
 
+                // Draw InfoWindow at once
                 infoWindow.setContent(`
-                    <div>${marker.title}</div>
+                    <div>${venueName}</div>
                     <div>
                         <img src=${photoURL}>
                     </div>
                 `);
             } else {
                 infoWindow.setContent(`
-                    <div>${marker.title}</div>
+                    <div>${venueName}</div>
                 `);
             }   
         })
         .fail(function() {
-            // error
+            console.log('photo error');
+            // If getVenuePhoto Ajax call fails, searchForVenue Ajax fails too.
         })
         .always(function() {
-            // complete
+            console.log('photo complete');
+            // getVenuePhoto complete               
         });
-    }
-
-    // Check to make sure the InfoWindow is not already opened on this marker.
-    if (infoWindow.marker != marker) {
-        // Clear the InfoWindow content to give the streetview time to load.
-        infoWindow.setContent('');
-        infoWindow.marker = marker;
-        // Make sure the marker property is cleared if the InfoWindow is closed.
-        infoWindow.addListener('closeclick', function() {
-            infoWindow.marker = null;
-        });
-
-        var streetViewService = new google.maps.StreetViewService();
-        var radius = 50;
-
-        // In case the status is OK, which menas the pano was found,
-        // compute the position of the streetview image,
-        // then calculate the heading,
-        // then get a panorama from that and set the options
-        function getStreetView(data, status) {
-            if (status === google.maps.StreetViewStatus.OK) {
-                var nearStreetViewLocation = data.location.latLng;
-                var heading = google.maps.geometry.spherical.computeHeading(
-                    nearStreetViewLocation, marker.position);
-                infoWindow.setContent('<div>' + marker.title + '</div><div id="pano"></div>');
-                var panoramaOptions = {
-                    position: nearStreetViewLocation,
-                    pov: {
-                        heading: heading,
-                        pitch: 30
-                    }
-                };
-                var panorama = new google.maps.StreetViewPanorama(
-                    document.getElementById('pano'), panoramaOptions);
-            } else {
-                infoWindow.setContent('<div>' + marker.title + '</div>' + '<div>No Street View Found</div>');
-            }
-        }
-        // Use streetview service to get the closest streetview image within
-        // 50 meters of the markers position
-        // streetViewService.getPanoramaByLocation(marker.position, radius, getStreetView);
-        // Open the InfoWindow on the correct marker.
-        infoWindow.open(MAP, marker);    
     }
 }
 
