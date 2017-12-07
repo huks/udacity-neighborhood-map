@@ -6,9 +6,6 @@ const FOURSQUARE_CLIENT_ID = 'SR3U4RKZ5LPPQBWVYVOVJFA54XIR3HHH0L5XV3P45EC2LZCA';
 const FOURSQUARE_CLIENT_SECRET = 'UQM4AU1YV4YQB4ADXD4TQZPUNIFQRSI4OKXEACRYL3GR0XRI';
 const FOURSQUARE_VERSION = '20171206';
 
-/* The default location listings data - would come from the server */
-// var DEFAULT_LOCATIONS = 'default-locations.js';
-
 /* Google Maps Styles */
 // var MAP_STYLES = 'styles.js';
 
@@ -130,8 +127,6 @@ function populateInfoWindow(location, infoWindow) {
         resetMarkerInstance();
         // Animate to the new marker
         MAP.panTo(marker.position);   
-        // Clear the InfoWindow content to give the streetview time to load.
-        // infoWindow.setContent('');
         // Now the marker is new!
         infoWindow.marker = marker;
         // Make sure the marker property is cleared if the InfoWindow is closed.
@@ -224,6 +219,7 @@ function populateInfoWindow(location, infoWindow) {
             } else {
                 infoWindow.setContent(`
                     <div>${venueName}</div>
+                    <div>Photo not available</div>
                 `);
             }   
         })
