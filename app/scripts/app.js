@@ -78,17 +78,22 @@ function AppViewModel(data) {
     this.locations = ko.observableArray(ajaxLocations.map(function(data) {
         return new Location(data);
     }));        
+        
     // Filter feature cited from https://stackoverflow.com/questions/34584181/create-live-search-with-knockout
     this.filteredLocations = ko.computed(function() {
         return this.locations().filter(function(location) {                
             var display = true;
-            if (!self.filter() || location.title().toLowerCase().indexOf(self.filter().toLowerCase()) >= 0) {
+            if (!self.filter() || location.title().toLowerCase().indexOf(self.filter().toLowerCase()) >= 0) {                
                 display = true;
             } else {
+                // If the marker title is filtered out, reset the marker
+                // Not working in Korean
+                if (INFO_WINDOW.marker != null && INFO_WINDOW.marker.title == location.title()) {
+                    resetMarkerInstance();
+                }
                 display = false;
             }            
             location.marker.setVisible(display);
-            resetMarkerInstance();         
             return display;
         });
     }, this);
@@ -102,12 +107,15 @@ function AppViewModel(data) {
 }
 
 function resetMarkerInstance() {
-    if (typeof INFO_WINDOW.marker !== 'undefined') {
-        // No animation
+    if (typeof INFO_WINDOW.marker !== 'undefined' && INFO_WINDOW.marker != null) {
+        console.log('rmi', typeof INFO_WINDOW.marker);
+        // Disable the bounce animation
         INFO_WINDOW.marker.setAnimation(null);
         // Close the InfoWindow
         INFO_WINDOW.close();
-    }   
+        // Make sure the maker property is cleared if the InfoWindow is closed.
+        INFO_WINDOW.marker = null;            
+    }
 }
 
 // This function populates the InfoWindow when the marker is clicked.
@@ -128,7 +136,7 @@ function populateInfoWindow(location, infoWindow) {
         infoWindow.marker = marker;
         // Make sure the marker property is cleared if the InfoWindow is closed.
         infoWindow.addListener('closeclick', function() {
-            infoWindow.marker = null;
+            resetMarkerInstance();          
         });        
 
         searchForVenue(latLng);
