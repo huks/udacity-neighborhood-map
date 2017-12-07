@@ -13,26 +13,28 @@
 </head>
 <body>
   <div class="container-fluid">
-    <div class="row">
-        <!-- list-bar -->
-        <div id="list-bar" class="col-sm-3">
-            <div class="form-group">
-              <label for="filter">Search:</label>
-              <input id="filter" type="text" data-bind="textInput: filter" class="form-control"/>
-            </div>
-            <div data-bind="foreach: filteredLocations" class="list-group">
-              <a href="#" data-bind="text: title, click: $root.clickMarker" class="list-group-item"></a>
-            </div>
-        </div>
+    <div class="row">        
         <!-- map -->
         <div id="map" class="col-sm-9"></div>
+        <!-- list-bar -->
+        <div id="list-bar" class="col-sm-3">
+          <div class="form-group">
+            <label for="filter">Search:</label>
+            <input id="filter" type="text" data-bind="textInput: filter" class="form-control"/>
+          </div>
+          <div data-bind="foreach: filteredLocations" class="list-group">
+            <a href="#" data-bind="text: title, click: $root.clickMarker" class="list-group-item"></a>
+          </div>          
       </div>
+    </div>
   </div>
 
   <!-- components -->
   <script src="components\jquery\dist\jquery.min.js"></script>
   <script src="components\knockout\dist\knockout.js"></script>
-  <!-- app.js -->
+  <!-- scripts -->
+  <script src="scripts/default-locations.js"></script>
+  <script src="scripts/styles.js"></script>
   <script src="scripts/app.js"></script>
   <!-- Google Maps JavaScript -->
   <script async defer
