@@ -125,7 +125,9 @@ function populateInfoWindow(location, infoWindow) {
         // Make sure the marker property is cleared if the InfoWindow is closed.
         infoWindow.addListener('closeclick', function() {
             resetMarkerInstance();          
-        });        
+        });
+
+
 
         // First search for venue
         // then get photo of given venue
@@ -152,23 +154,16 @@ function searchForVenue(latLng, infoWindow, marker) {
             'limit': 1
         }
     })
-    .then(function(result) {
-        getVenuePhoto(result, infoWindow);
-    })
-    .done(function() {
+    .done(function(result) {
         console.log('venue success');
-        // When both searchForVenue and getVenuePhoto are done          
-        infoWindow.open(MAP, marker);
-        // then bounce
-        marker.setAnimation(google.maps.Animation.BOUNCE);  
+        getVenuePhoto(result, infoWindow, marker);        
     })
     .fail(function() {
         console.log('venue error');
         // No negative repercussions to the UI
     })
     .always(function() {
-        console.log('venue complete');
-        // it should be called at 'last'           
+        console.log('venue complete');         
     });
 }
 
@@ -177,7 +172,7 @@ function searchForVenue(latLng, infoWindow, marker) {
  * - Foursquare API: Returns a photos for a specific venue.
  * - Dependence chain of searchForVenue Ajax request
  */
-function getVenuePhoto(data, infoWindow) {
+function getVenuePhoto(data, infoWindow, marker) {
     var venueId = data.response.venues[0].id;
     var venueName = data.response.venues[0].name;
     return $.ajax({
@@ -204,15 +199,18 @@ function getVenuePhoto(data, infoWindow) {
              *   - widthXX: forces the width to be XX and scales the height proportionally
              *   - heightYY: forces the height to be YY and scales the width proportionally
              */
-            var size = 'height200';
+            var size = 'width200';
             var suffix = result.response.photos.items[0].suffix;
             var photoURL = prefix + size + suffix;
 
             // Draw InfoWindow at once
             infoWindow.setContent(`
-                <div>${venueName}</div>
-                <div>
+                <div id="iw-container">
+                  <div class="iw-title">${venueName}</div>
+                  <div class="iw-img">
                     <img src=${photoURL}>
+                  </div>
+                  <div class="iw-content">iw-content</div>
                 </div>
             `);
         } else {
@@ -220,7 +218,12 @@ function getVenuePhoto(data, infoWindow) {
                 <div>${venueName}</div>
                 <div>Photo not available</div>
             `);
-        }   
+        }
+
+        // end of ajax...          
+        infoWindow.open(MAP, marker);
+        // then bounce
+        marker.setAnimation(google.maps.Animation.BOUNCE);     
     })
     .fail(function() {
         console.log('photo error');

@@ -20,7 +20,3 @@ html, body, .container-fluid, .row {
 #list-bar.collapse {
   width: 0%;
 }
-#pano {
-  width: 200px;
-  height: 200px;
-}
