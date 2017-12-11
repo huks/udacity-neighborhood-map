@@ -1,6 +1,6 @@
 // Global map variables
-var MAP;
-var INFO_WINDOW;
+var gMap;
+var gInfoWindow;
 // Constant variables
 const FOURSQUARE_CLIENT_ID = 'SR3U4RKZ5LPPQBWVYVOVJFA54XIR3HHH0L5XV3P45EC2LZCA';
 const FOURSQUARE_CLIENT_SECRET = 'UQM4AU1YV4YQB4ADXD4TQZPUNIFQRSI4OKXEACRYL3GR0XRI';
@@ -13,27 +13,37 @@ const FOURSQUARE_VERSION = '20171206';
  * @description Represent a single location item
  * @param data - ajaxLocations object
  */
-function Location(data) {
+function LocationItem(data) {
+    console.log(data);
     var self = this;
-    this.title = ko.observable(data.title);
-    this.location = ko.observable(data.location);
+    this.id = data.venue.id;
+    this.name = data.venue.name;
+    this.category = data.venue.categories[0].name;
+    this.title = ko.observable(self.name + ' ' + self.category);
+    this.location = ko.observable(data.venue.location);    
 
     // Create a marker for each location
     this.marker = new google.maps.Marker({
-        position: this.location(),
-        title: this.title(),
-        animation: google.maps.Animation.DROP
+        map: gMap,
+        position: self.location(),
+        title: self.title(),
+        animation: google.maps.Animation.DROP,
+        id: self.id
     });
 
     // Create an onclick event per marker
     this.marker.addListener('click', function() {
-        populateInfoWindow(self, INFO_WINDOW);
+        populateInfoWindow(self);
     });
 
+    this.clickMarker = function() {
+        google.maps.event.trigger(self.marker, 'click');
+    };
+
     // Extend the boundaries of the map for each marker
-    MAP.bounds.extend(this.marker.position);
+    gMap.bounds.extend(self.marker.position);
     // and display the marker
-    this.marker.setMap(MAP);    
+    this.marker.setMap(gMap);    
 }
 
 /**
@@ -41,66 +51,58 @@ function Location(data) {
  * @param data - Result from getForsquareVenues() ajax
  */
 function AppViewModel(data) {
-    var self = this;
-    
-    // Parse the data
-    var ajaxLocations = [];
+    var self = this;   
+
+    // Prepare the items data
     var items = data.response.groups[0].items;
-    for (item of items) {
-        var title = item.venue.name + ' ' + item.venue.categories[0].name;
-        var lat = item.venue.location.lat;
-        var lng = item.venue.location.lng;
-        ajaxLocations.push(
-            {title: title, location: {lat: lat, lng: lng}}
-        );
-    }
+
+    // initialize the Snazzy Info Window
+    var tempMarker = new google.maps.Marker({
+        map: gMap,
+        id: 0
+    });
+    gInfoWindow = new SnazzyInfoWindow({
+        marker: tempMarker,
+        showCloseButton: false,
+        padding: '0px'
+    });
 
     this.filter = ko.observable();
 
-    this.locations = ko.observableArray(ajaxLocations.map(function(data) {
-        return new Location(data);
+    this.locations = ko.observableArray(items.map(function(item) {
+        return new LocationItem(item);
     }));
         
     // Filter feature cited from https://stackoverflow.com/questions/34584181/create-live-search-with-knockout
     this.filteredLocations = ko.computed(function() {
-        return this.locations().filter(function(location) {
+        return self.locations().filter(function(locItem) {
             var display = true;
-            if (!self.filter() || location.title().toLowerCase().indexOf(self.filter().toLowerCase()) >= 0) {                
+            if (!self.filter() || locItem.title().toLowerCase().indexOf(self.filter().toLowerCase()) >= 0) {                
                 display = true;
             } else {
-                // If the marker title is filtered out, reset the marker
-                // Won't work in Korean
-                if (INFO_WINDOW.marker != null && INFO_WINDOW.marker.title == location.title()) {
-                    resetMarkerInstance();
-                }
                 display = false;
             }            
-            location.marker.setVisible(display);
+            locItem.marker.setVisible(display);
             return display;
         });
     }, this);
 
-    // Handle marker clicking
-    this.clickMarker = function(location) {
-        populateInfoWindow(location, INFO_WINDOW);
-    }
-
     // Fit map to initialized bounds
     // Bounds are extended from each Location() function
-    MAP.fitBounds(MAP.bounds);
+    gMap.fitBounds(gMap.bounds);
 }
 
 /**
  * @description Disable the animation, close and reset the InfoWindow
  */
 function resetMarkerInstance() {
-    if (typeof INFO_WINDOW.marker !== 'undefined' && INFO_WINDOW.marker != null) {
+    if (typeof gInfoWindow.marker !== 'undefined' && gInfoWindow.marker != null) {
         // Disable the bounce animation
-        INFO_WINDOW.marker.setAnimation(null);
+        gInfoWindow.marker.setAnimation(null);
         // Close the InfoWindow
-        INFO_WINDOW.close();
+        gInfoWindow.close();
         // Make sure the maker property is cleared if the InfoWindow is closed.
-        INFO_WINDOW.marker = null;            
+        gInfoWindow.marker = null;            
     }
 }
 
@@ -112,34 +114,92 @@ function resetMarkerInstance() {
 // We'll only allow one InfoWindow which will open at the marker that is clicked,
 // and populate based on that markers position.
 // Cited from Udacity course: Project_Code_13_DevilInTheDetailsPlacesDetails.html
-function populateInfoWindow(location, infoWindow) {
-    var marker = location.marker;
-    var latLng = location.location().lat+','+location.location().lng;     
+function populateInfoWindow(locItem) {
+    console.log(locItem.id);
+    console.log(gInfoWindow._marker.id);    
 
-    if (infoWindow.marker != marker) {
-        resetMarkerInstance();
-        // Animate to the new marker
-        MAP.panTo(marker.position);   
-        // Now the marker is new!
-        infoWindow.marker = marker;
-        // Make sure the marker property is cleared if the InfoWindow is closed.
-        infoWindow.addListener('closeclick', function() {
-            resetMarkerInstance();          
-        });
+    var newId = locItem.id;
+    var oldId = gInfoWindow._marker.id;
 
+    if (newId != oldId) {
+        gMap.panTo(locItem.marker.position);
+        getVenuePhoto(locItem.id).done(createInfoWindow);
+    }
 
+    function createInfoWindow(data) {
+        console.log('createInfoWindow');
+        var photoCount = data.response.photos.count;
+        // If there is a photo, least one
+        if (photoCount > 0) {
+            var prefix = data.response.photos.items[0].prefix;
+            /**
+             * size can be one of the following, where XX or YY is one of 36, 100, 300, or 500.
+             *  - XXxYY
+             *  - original: the original photo’s size
+             *  - capXX: cap the photo with a width or height of XX. (whichever is larger). Scales the other, smaller dimension proportionally
+             *  - widthXX: forces the width to be XX and scales the height proportionally
+             *  - heightYY: forces the height to be YY and scales the width proportionally
+             */
+            var size = 'width300';
+            var suffix = data.response.photos.items[0].suffix;
+            var photoURL = prefix + size + suffix;            
 
-        // First search for venue
-        // then get photo of given venue
-        // then the InfoWindow will pop
-        searchForVenue(latLng, infoWindow, marker);
+            gInfoWindow.setContent(
+                '<img src='+photoURL+'>' +
+                '<div id="info-window">' +
+                '<dl class="row">' +
+                '<dt class="col-sm-4">NAME</dt>' +
+                '<dd class="col-sm-8">'+locItem.name+'</dd>' +
+                '<dt class="col-sm-4">CATEGORY</dt>' +
+                '<dd class="col-sm-8">'+locItem.category+'</dd>' +
+                '</dl>' +
+                '</div>'
+            );
+        } else {
+            gInfoWindow.setContent(
+                '<div id="info-window">' +
+                '<dl class="row">' +
+                '<dt class="col-sm-4">NAME</dt>' +
+                '<dd class="col-sm-8">'+locItem.name+'</dd>' +
+                '<dt class="col-sm-4">CATEGORY</dt>' +
+                '<dd class="col-sm-8">'+locItem.category+'</dd>' +
+                '</dl>' +
+                '</div>'
+            );
+        }
+
+        gInfoWindow.setPosition(
+            locItem.location()
+        );
+        gInfoWindow.open();
+
     }
 }
 
 /**
+ * @description Get a Venue's Photo(s)
+ *  - Foursquare API: Returns a photos for a specific venue.
+ */
+function getVenuePhoto(venueId) {
+    return $.ajax({
+        url: 'https://api.foursquare.com/v2/venues/'+venueId+'/photos',
+        dataType: 'json',
+        data: {
+            'client_id': FOURSQUARE_CLIENT_ID,
+            'client_secret': FOURSQUARE_CLIENT_SECRET,
+            'v': FOURSQUARE_VERSION,
+            'limit': 1
+        }
+    })
+    .done(function() {
+        console.log('getVenuePhoto done');
+    });
+}
+
+/**
  * @description Search for Venue(s)
- * - Foursquare API: Returns a list of venues near the current location,
- *   optinally matching a search term.
+ *  - Foursquare API: Returns a list of venues near the current location,
+ *    optinally matching a search term.
  */   
 function searchForVenue(latLng, infoWindow, marker) {
     var ll = latLng;
@@ -167,95 +227,24 @@ function searchForVenue(latLng, infoWindow, marker) {
     });
 }
 
-/**
- * @description Get a Venue's Photo(s)
- * - Foursquare API: Returns a photos for a specific venue.
- * - Dependence chain of searchForVenue Ajax request
- */
-function getVenuePhoto(data, infoWindow, marker) {
-    var venueId = data.response.venues[0].id;
-    var venueName = data.response.venues[0].name;
-    return $.ajax({
-        url: 'https://api.foursquare.com/v2/venues/'+venueId+'/photos',
-        dataType: 'json',
-        data: {
-            'client_id': FOURSQUARE_CLIENT_ID,
-            'client_secret': FOURSQUARE_CLIENT_SECRET,
-            'v': FOURSQUARE_VERSION,
-            'limit': 1
-        }
-    })
-    .done(function(result) {
-        console.log('photo success');
-        var photoCount = result.response.photos.count;
-        // If there is a photo, least one
-        if (photoCount > 0) {
-            var prefix = result.response.photos.items[0].prefix;
-            /**
-             * size can be one of the following, where XX or YY is one of 36, 100, 300, or 500.
-             *   - XXxYY
-             *   - original: the original photo’s size
-             *   - capXX: cap the photo with a width or height of XX. (whichever is larger). Scales the other, smaller dimension proportionally
-             *   - widthXX: forces the width to be XX and scales the height proportionally
-             *   - heightYY: forces the height to be YY and scales the width proportionally
-             */
-            var size = 'width200';
-            var suffix = result.response.photos.items[0].suffix;
-            var photoURL = prefix + size + suffix;
-
-            // Draw InfoWindow at once
-            infoWindow.setContent(`
-                <div id="iw-container">
-                  <div class="iw-title">${venueName}</div>
-                  <div class="iw-img">
-                    <img src=${photoURL}>
-                  </div>
-                  <div class="iw-content">iw-content</div>
-                </div>
-            `);
-        } else {
-            infoWindow.setContent(`
-                <div>${venueName}</div>
-                <div>Photo not available</div>
-            `);
-        }
-
-        // end of ajax...          
-        infoWindow.open(MAP, marker);
-        // then bounce
-        marker.setAnimation(google.maps.Animation.BOUNCE);     
-    })
-    .fail(function() {
-        console.log('photo error');
-        // If getVenuePhoto Ajax call fails, searchForVenue Ajax fails too.
-    })
-    .always(function() {
-        console.log('photo complete');
-        // getVenuePhoto complete               
-    });
-}
-
 function startApp() {
     // Current location variables for Foursquare ll
     var locKorea = {lat: 37.54, lng: 126.94};
     var locAustralia = {lat:-27.49, lng: 153.01}; // for English users
 
     // initMap()
-    MAP = new google.maps.Map(document.getElementById('map'), {
+    gMap = new google.maps.Map(document.getElementById('map'), {
         center: locAustralia,
         zoom: 13,
         mapTypeControl: false
     });
 
     // initialize bounds variable
-    MAP.bounds = new google.maps.LatLngBounds();
-
-    // initialize InfoWindow
-    INFO_WINDOW = new google.maps.InfoWindow();
+    gMap.bounds = new google.maps.LatLngBounds();
 
     /**
      * @description: getFoursquareVenues() - Get Venue Recommendations
-     * - Foursquare API: Returns a list of recommended venues near the current location.
+     *  - Foursquare API: Returns a list of recommended venues near the current location.
      */
     $.ajax({
         url: 'https://api.foursquare.com/v2/venues/explore',
@@ -269,15 +258,15 @@ function startApp() {
         }
     })
     .done(function(result) {
-        console.log('ajax success');        
+        // console.log('done getFoursquareVenues');        
         ko.applyBindings(new AppViewModel(result));       
     })
     .fail(function() {
-        console.log('ajax error');
+        console.log('fail getFoursquareVenues');
         $('#map').addClass('expand');
         $('#list-bar').addClass('collapse');
     })
     .always(function() {
-        console.log('ajax complete');        
+        // console.log('always getFoursquareVenues ');        
     });    
 }
