@@ -7,7 +7,7 @@ const FOURSQUARE_CLIENT_SECRET = 'UQM4AU1YV4YQB4ADXD4TQZPUNIFQRSI4OKXEACRYL3GR0X
 const FOURSQUARE_VERSION = '20171206';
 
 /* Google Maps Styles */
-// var MAP_STYLES = 'styles.js';
+// var gMapStyles = 'styles.js';
 
 /**
  * @description Represent a single location item
@@ -22,13 +22,26 @@ function LocationItem(data) {
     this.title = ko.observable(self.name + ' ' + self.category);
     this.location = ko.observable(data.venue.location);    
 
+    // Add a custom marker icon
+    // Cited from https://github.com/atmist/snazzy-info-window/blob/master/examples/complex-styles/scripts.js
+    var markerIcon = {
+        path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+        fillColor: '#e25a00',
+        fillOpacity: 0.95,
+        scale: 1.5,
+        strokeColor: '#fff',
+        strokeWeight: 1,
+        anchor: new google.maps.Point(12, 24)
+    };
+
     // Create a marker for each location
     this.marker = new google.maps.Marker({
         map: gMap,
         position: self.location(),
         title: self.title(),
         animation: google.maps.Animation.DROP,
-        id: self.id
+        id: self.id,
+        icon: markerIcon
     });
 
     // Create an onclick event per marker
@@ -64,7 +77,8 @@ function AppViewModel(data) {
     gInfoWindow = new SnazzyInfoWindow({
         marker: tempMarker,
         showCloseButton: false,
-        padding: '0px'
+        padding: '0px',
+        panOnOpen: false
     });
 
     this.filter = ko.observable();
@@ -121,9 +135,8 @@ function populateInfoWindow(locItem) {
     var newId = locItem.id;
     var oldId = gInfoWindow._marker.id;
 
-    if (newId != oldId) {
-        gMap.panTo(locItem.marker.position);
-        getVenuePhoto(locItem.id).done(createInfoWindow);
+    if (newId != oldId) {        
+        getVenuePhoto(locItem.id).done(createInfoWindow);        
     }
 
     function createInfoWindow(data) {
@@ -145,7 +158,7 @@ function populateInfoWindow(locItem) {
             var photoURL = prefix + size + suffix;            
 
             gInfoWindow.setContent(
-                '<img src='+photoURL+'>' +
+                '<img src='+photoURL+' alt="A photo of the venue">' +
                 '<div id="info-window">' +
                 '<dl class="row">' +
                 '<dt class="col-sm-4">NAME</dt>' +
@@ -172,7 +185,8 @@ function populateInfoWindow(locItem) {
             locItem.location()
         );
         gInfoWindow.open();
-
+        // pan after done...?
+        gMap.panTo(locItem.marker.position);    
     }
 }
 
@@ -236,7 +250,8 @@ function startApp() {
     gMap = new google.maps.Map(document.getElementById('map'), {
         center: locAustralia,
         zoom: 13,
-        mapTypeControl: false
+        mapTypeControl: false,
+        styles: gMapStyles
     });
 
     // initialize bounds variable
