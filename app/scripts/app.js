@@ -243,7 +243,7 @@ function searchForVenue(latLng, infoWindow, marker) {
 
 function startApp() {
     // Current location variables for Foursquare ll
-    var locKorea = {lat: 37.54, lng: 126.94};
+    var locKorea = {lat: 37.40, lng: 127.11};
     var locAustralia = {lat:-27.49, lng: 153.01}; // for English users
 
     // initMap()
