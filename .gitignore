@@ -1,4 +1,4 @@
-docs/components
+app/components
 node_modules
 
 *.bak

@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Udacity Neighborhood Map</title>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <!-- Bootstrap CSS -->
+  <link rel="stylesheet" href="components/bootstrap/dist/css/bootstrap.min.css">
+  <!-- Snazzy Info Window CSS -->
+  <link rel="stylesheet" href="components/snazzy-info-window/dist/snazzy-info-window.min.css">
+  <!-- main.css -->
+  <link rel="stylesheet" href="styles/main.css">    
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">        
+        <!-- map -->
+        <div id="map" class="col-md-9"></div>
+        <!-- list-bar -->
+        <div id="list-bar" class="col-md-3">
+          <!-- loaded -->
+          <div style="display: none" class="form-group" data-bind="visible: true">
+            <label for="filter">Search:</label>
+            <input id="filter" type="text" data-bind="textInput: filter" class="form-control"/>
+          </div>
+          <div style="display: none" data-bind="foreach: filteredLocations, visible: true" class="list-group">
+            <a data-bind="text: title, click: clickMarker" class="list-group-item" data-toggle="collapse" href="#collapseExample" aria-expanded="false" aria-controls="collapseExample"></a>            
+          </div>
+          <!-- loading -->
+          <div class="form-group" data-bind="visible: false">
+            <label for="filter">Search:</label>
+            <input id="filter" type="text" data-bind="textInput: filter" class="form-control" placeholder="Loading, please wait" disabled/>
+          </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- components -->
+  <script src="components/jquery/dist/jquery.min.js"></script>
+  <script src="components/bootstrap/dist/js/bootstrap.min.js"></script>
+  <script src="components/knockout/dist/knockout.js"></script>
+  <!-- scripts -->
+  <script src="scripts/styles.js"></script>
+  <script src="scripts/app.js"></script>
+  <!-- Google Maps JavaScript: no async defer to use Snazzy Info Window -->
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyClPOAOynlgDWP5GvaZiFfqL3XS88vI4Oo&v=3&callback=startApp">
+  </script>
+  <!-- Snazzy Info Window Script -->
+  <script src="components/snazzy-info-window/dist/snazzy-info-window.min.js"></script>
+</body>
+</html>
