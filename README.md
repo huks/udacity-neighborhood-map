@@ -13,11 +13,11 @@ A single page application featuring a map of my neighborhood, with functionaliti
 An running example of the release 0.0.1 is available [here](https://huks.github.io/udacity-neighborhood-map/).
 ### Install Bower
 Bower is a command line utility. Install it with npm.
-`$ npm install -g bower`
+```$ npm install -g bower```
 Bower requires nodes, npm and git.
 ### Install dependencies
 Installs the project dependencies listed in bower.json to app/components/.
-`$ bower install`
+```$ bower install```
 
 ## Tools Used
 - [Knockout.js]
