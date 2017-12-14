@@ -1,8 +1,8 @@
 {
   "name": "udacity-neighborhood-map",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "description": "",
-  "main": "index.js",
+  "main": "app/app.js",
   "dependencies": {},
   "devDependencies": {},
   "scripts": {
@@ -17,5 +17,5 @@
   "bugs": {
     "url": "https://github.com/huks/udacity-neighborhood-map/issues"
   },
-  "homepage": "https://github.com/huks/udacity-neighborhood-map#readme"
+  "homepage": "https://huks.github.io/udacity-neighborhood-map/"
 }
