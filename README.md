@@ -11,7 +11,7 @@ A single page application featuring a map of my neighborhood, with functionaliti
 ## Getting Started
 
 ### Live Example
-An running example of the release 0.0.1 is available [here](https://huks.github.io/udacity-neighborhood-map/).
+A running example of the release 0.0.1 is available [here](https://huks.github.io/udacity-neighborhood-map/).
 
 ### Install Bower
 Bower is a command line utility. Install it with npm.
