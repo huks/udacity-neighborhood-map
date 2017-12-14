@@ -29,7 +29,7 @@ Bower is a command line utility. Install it with npm.
 $ npm install -g bower
 ```
 
-Bower requires nodes, npm and git.
+Bower requires [nodes, npm] and [git].
 
 ### Install dependencies
 
@@ -61,6 +61,8 @@ Open `app/index.html` file in your favorite browser.
 [Vanilla JS]: <http://vanilla-js.com>
 [Google Maps JavaScript API]: <https://developers.google.com/maps/documentation/javascript/>
 [Foursquare API]: https://developer.foursquare.com/
+[nodes, npm]: https://nodejs.org/en/
+[git]: https://git-scm.com/
 [Knockout.js]: http://knockoutjs.com/
 [Bootstrap]: https://getbootstrap.com/
 [Snazzy Info Window]: https://github.com/atmist/snazzy-info-window
